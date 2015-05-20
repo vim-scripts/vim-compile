@@ -1,16 +1,23 @@
 This is a mirror of http://www.vim.org/scripts/script.php?script_id=5133
 
-This plugin is a helper for compiling directly from vim, I recommend to use
-it with [dispatch](https://github.com/tpope/vim-dispatch) but it can work
-without, it is also compatible with
-[vim-latex](http://vim-latex.sourceforge.net/) compilation settings.
+This plugin is a flexible helper for compiling directly from vim. Compilation
+and execution command are run using the first avalaible of the following
+options:
+1. Custom function (see configuration)
+2. [Dispatch](https://github.com/tpope/vim-dispatch)
+3. Vim shell escape (`:make` and `:!`)
 
-Since v0.1.1 it can also compile using
-[vimux](https://github.com/benmills/vimux) but for the moment it does not
-provide the quickix window for vimux compilations.
+It also provides an easy and unified way to set and use compilers, and
+natively integrate with [vim-latex](http://vim-latex.sourceforge.net/)
+compilation settings.
 
-It provides an easy and unified way to set and use compilers, see the Features
-secion.
+# What is new in v0.2.2 ?
+
+Since v0.2 you can define a custom function to launch commands (compilation
+and exectuion), see configuration.
+
+**Note:** since v0.2.2, you need to use `function()` to set a custom starter
+function.
 
 # Features
 
@@ -33,21 +40,15 @@ The following compilation function is provided
     "   clean:      doe a make clean, require forcemake
     function! VimCompileCompile(compi, forcemake, parallel, install, exec,clean)
 
-The compilation is executed by the first available options:
-
-1. [Dispatch](https://github.com/tpope/vim-dispatch)
-2. [Vimux](https://github.com/benmills/vimux) (no quickfix for the moment)
-3. Native :make (always available)
-
 There are several predefined compilation mappings:
 
-    " make
+    " make only
     noremap <leader>m :call VimCompileCompile(1,0,0,0,0,0)<CR>
 
-    " make & exec
+    " make and execute
     noremap <leader>me :call VimCompileCompile(1,0,0,0,1,0)<CR>
 
-    " make & install
+    " make and make install
     noremap <leader>mi :call VimCompileCompile(1,1,0,1,0,0)<CR>
 
     " make parallel
@@ -56,7 +57,7 @@ There are several predefined compilation mappings:
     " make install parallel
     noremap <leader>mij :call VimCompileCompile(1,1,1,1,0,0)<CR>
 
-    " make & exec parallel
+    " make parallel and execute
     noremap <leader>mje :call VimCompileCompile(1,1,1,0,1,0)<CR>
 
     " make clean
@@ -65,31 +66,65 @@ There are several predefined compilation mappings:
     " make clean and make
     noremap <leader>mc :call VimCompileCompile(1,0,0,0,0,1)<CR>
 
-    " exec
+    " execute
     noremap <leader>e :call VimCompileCompile(0,0,0,0,1,0)<CR><CR>
-
-
 
 # Configuration
 
-Three variables can be used to configure the plugin, the two firsts are
-dictionaries (see :help Dictionary) giving the association filetype =>
-compile or execute rule.
+Two dictionaries (see :help Dictionary) can be used to modify or add
+compilation and execution rules.
 For instances adding the following to your vimrc will change the compilation
 and execution rules for pandoc files
 
     let g:VimCompileExecutors={'pandoc' : "firefox %:t:r.html > /dev/null 2>&1",}
     let g:VimCompileCompiler={'pandoc' : "pandoc --smart --standalone --mathml --listings % > %:t:r.html",}
 
-The third gives the default execution rule if none are defined for the
-filetype:
+The following variable gives the default execution rule if none are defined
+for the filetype:
 
     let g:VimCompileDefaultExecutor="./%"
 
-# TODO
+A custom starter function (responsible for starting compilation and execution)
+can be provided by setting the following variable:
 
-1. Make QuickFix work with vimux
-2. Give Flexible choice for user (vim/Dispatch/Vimux/other function or plugin)
+     let g:VimCompileCustomStarter=function("MyStarterFunction")
+
+A starter functions takes two arguments:
+
++ the first is the command to execute
++ the second is a character:
+    + `m` indicate that we are doing an actual compilation
+    + `e` means that we run a custom command.
+
+For a better understanding of starter functions, there is the default one:
+
+    " Default command starter {{{2
+    " Start a command using Dispatch if available or the shell escape
+    " Arguments: cmd: the command to execute
+    "            type: 'm' if we are doing a compilation, 'e' otherwise
+    function! VimCompileDefaultStartCmd(cmd,type)
+        if (a:type=='m') " Compilation: use makeprg and :Dispatch or :make
+            let &makeprg=a:cmd
+            if exists("g:loaded_dispatch")
+                let l:launcher=":Dispatch"
+            else
+                let l:launcher=":make"
+            endif
+        else " Normal command
+            let l:cmd=a:cmd
+            if exists("g:loaded_dispatch")
+                let l:launcher=":Start"
+                if (a:cmd=~'^.*&\s*$') " Let Dispatch handle background commands
+                    let l:cmd=substitute(a:cmd,'&\s*$','','')
+                    let l:launcher.="!"
+                endif
+            else " Simple shell escape
+                let l:launcher=":!"
+            endif
+            let l:launcher.=" ".l:cmd
+        endif
+        execute l:launcher
+    endfunction
 
 More infos at https://github.com/dbeniamine/vim-compile
 

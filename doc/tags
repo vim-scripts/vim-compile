@@ -1,3 +1,8 @@
-VimCompile-commands	vim-compile.txt	/*VimCompile-commands*
 VimCompile-configuration	vim-compile.txt	/*VimCompile-configuration*
+VimCompile-customBuilder	vim-compile.txt	/*VimCompile-customBuilder*
+VimCompile-customStarter	vim-compile.txt	/*VimCompile-customStarter*
+VimCompile-mappings	vim-compile.txt	/*VimCompile-mappings*
+VimCompile-news	vim-compile.txt	/*VimCompile-news*
+VimCompile-rules	vim-compile.txt	/*VimCompile-rules*
+VimCompile-usage	vim-compile.txt	/*VimCompile-usage*
 VimCompile.txt	vim-compile.txt	/*VimCompile.txt*
